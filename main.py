@@ -17,7 +17,9 @@ allCount = 0
 for patientTrace in patientVisitEvents:
     interventionCount = 0
     patientId = patientTrace.attrib['PatientId']
-    admissionTime = int(patientTrace.attrib['AdmissionTime'][0:4])
+    admissionTime = patientTrace.attrib['AdmissionTime'][0:4] + str(
+        (int(patientTrace.attrib['AdmissionTime'][5:7]) - 1) / 3)
+    print admissionTime
     patientIdDic[patientId] = admissionTime
     if admissionTime not in logyearInterventionNum:
         logyearInterventionNum[admissionTime] = {}
@@ -201,24 +203,22 @@ rateSheet = workbook.add_sheet("year rate can use for graph", cell_overwrite_ok=
 countSheet = workbook.add_sheet("year count can use for graph", cell_overwrite_ok=True)
 isRateUsable = False
 isCountUsable = False
+isAllYearUsable = True
 for i in allSixCounter.iteritems():
     for j in eachSixDic.iteritems():
         anomaly = j[0]
         intervention = i[0]
-        if intervention in yearAnomalyInterventionDict[2008][anomaly] and intervention in \
-                yearAnomalyInterventionDict[2009][anomaly] and intervention in yearAnomalyInterventionDict[2010][
-            anomaly]:
-            count2008 = yearAnomalyInterventionDict[2008][anomaly][intervention]
-            count2009 = yearAnomalyInterventionDict[2009][anomaly][intervention]
-            count2010 = yearAnomalyInterventionDict[2010][anomaly][intervention]
-            rate2008 = count2008 * 1.0 / logyearInterventionNum[2008][intervention]
-            rate2009 = count2009 * 1.0 / logyearInterventionNum[2009][intervention]
-            rate2010 = count2010 * 1.0 / logyearInterventionNum[2010][intervention]
-            if (rate2009 - rate2008) != 0 and abs((rate2010 - rate2009) / (rate2009 - rate2008) - 1) < 0.2:
-                isRateUsable = True
-            if (count2009 - count2008) != 0 and abs((count2010 - count2009) * 1.0 / (count2009 - count2008) - 1) < 0.2:
-                isCountUsable = True
-            for year in {2008, 2009, 2010}:
+        isAllYearUsable = True
+        for year in { "20081", "20082", "20083", "20090", "20091", "20092", "20093", "20100", "20101", "20102",
+                     "20103"}:
+            if year not in yearAnomalyInterventionDict or anomaly not in yearAnomalyInterventionDict[year] or intervention not in yearAnomalyInterventionDict[year][anomaly]:
+                isAllYearUsable = False
+                break
+
+        if isAllYearUsable:
+            print "isAllYearUsable"
+            for year in {"20081", "20082", "20083", "20090", "20091", "20092", "20093", "20100", "20101",
+                         "20102", "20103"}:
                 sheet.write(k, 0, year)
                 sheet.write(k, 1, anomaly)
                 sheet.write(k, 2, intervention)
@@ -227,33 +227,58 @@ for i in allSixCounter.iteritems():
                 sheet.write(k, 5, format(
                     (yearAnomalyInterventionDict[year][anomaly][intervention]) * 1.0 / logyearInterventionNum[year][
                         intervention], '0.4%'))
-                if isRateUsable:
-                    rateSheet.write(usableRateIndex, 0, year)
-                    rateSheet.write(usableRateIndex, 1, anomaly)
-                    rateSheet.write(usableRateIndex, 2, intervention)
-                    rateSheet.write(usableRateIndex, 3, logyearInterventionNum[year][intervention])
-                    rateSheet.write(usableRateIndex, 4, yearAnomalyInterventionDict[year][anomaly][intervention])
-                    rateSheet.write(usableRateIndex, 5, format(
-                        (yearAnomalyInterventionDict[year][anomaly][intervention]) * 1.0 / logyearInterventionNum[year][
-                            intervention], '0.4%'))
-                    rateSheet.write(usableRateIndex, 6, (rate2010 - rate2009) / (rate2009 - rate2008))
-                    usableRateIndex += 1
-                k += 1
-                if isCountUsable:
-                    countSheet.write(usableCountIndex, 0, year)
-                    countSheet.write(usableCountIndex, 1, anomaly)
-                    countSheet.write(usableCountIndex, 2, intervention)
-                    countSheet.write(usableCountIndex, 3, logyearInterventionNum[year][intervention])
-                    countSheet.write(usableCountIndex, 4, yearAnomalyInterventionDict[year][anomaly][intervention])
-                    countSheet.write(usableCountIndex, 5, format(
-                        (yearAnomalyInterventionDict[year][anomaly][intervention]) * 1.0 / logyearInterventionNum[year][
-                            intervention], '0.4%'))
-                    countSheet.write(usableCountIndex, 6, (count2010 - count2009) * 1.0 / (count2009 - count2008))
-                    usableCountIndex += 1
-            isRateUsable = False
-            isCountUsable = False
+                k+=1
 
-workbook.save('test.xls')
+
+                # if intervention in yearAnomalyInterventionDict[2008][anomaly] and intervention in \
+                #         yearAnomalyInterventionDict[2009][anomaly] and intervention in yearAnomalyInterventionDict[2010][
+                #     anomaly]:
+                #     count2008 = yearAnomalyInterventionDict[2008][anomaly][intervention]
+                #     count2009 = yearAnomalyInterventionDict[2009][anomaly][intervention]
+                #     count2010 = yearAnomalyInterventionDict[2010][anomaly][intervention]
+                #     rate2008 = count2008 * 1.0 / logyearInterventionNum[2008][intervention]
+                #     rate2009 = count2009 * 1.0 / logyearInterventionNum[2009][intervention]
+                #     rate2010 = count2010 * 1.0 / logyearInterventionNum[2010][intervention]
+                #     if (rate2009 - rate2008) != 0 and abs((rate2010 - rate2009) / (rate2009 - rate2008) - 1) < 0.2:
+                #         isRateUsable = True
+                #     if (count2009 - count2008) != 0 and abs((count2010 - count2009) * 1.0 / (count2009 - count2008) - 1) < 0.2:
+                #         isCountUsable = True
+                #     for year in {2008, 2009, 2010}:
+                #         sheet.write(k, 0, year)
+                #         sheet.write(k, 1, anomaly)
+                #         sheet.write(k, 2, intervention)
+                #         sheet.write(k, 3, logyearInterventionNum[year][intervention])
+                #         sheet.write(k, 4, yearAnomalyInterventionDict[year][anomaly][intervention])
+                #         sheet.write(k, 5, format(
+                #             (yearAnomalyInterventionDict[year][anomaly][intervention]) * 1.0 / logyearInterventionNum[year][
+                #                 intervention], '0.4%'))
+                #         if isRateUsable:
+                #             rateSheet.write(usableRateIndex, 0, year)
+                #             rateSheet.write(usableRateIndex, 1, anomaly)
+                #             rateSheet.write(usableRateIndex, 2, intervention)
+                #             rateSheet.write(usableRateIndex, 3, logyearInterventionNum[year][intervention])
+                #             rateSheet.write(usableRateIndex, 4, yearAnomalyInterventionDict[year][anomaly][intervention])
+                #             rateSheet.write(usableRateIndex, 5, format(
+                #                 (yearAnomalyInterventionDict[year][anomaly][intervention]) * 1.0 / logyearInterventionNum[year][
+                #                     intervention], '0.4%'))
+                #             rateSheet.write(usableRateIndex, 6, (rate2010 - rate2009) / (rate2009 - rate2008))
+                #             usableRateIndex += 1
+                #         k += 1
+                #         if isCountUsable:
+                #             countSheet.write(usableCountIndex, 0, year)
+                #             countSheet.write(usableCountIndex, 1, anomaly)
+                #             countSheet.write(usableCountIndex, 2, intervention)
+                #             countSheet.write(usableCountIndex, 3, logyearInterventionNum[year][intervention])
+                #             countSheet.write(usableCountIndex, 4, yearAnomalyInterventionDict[year][anomaly][intervention])
+                #             countSheet.write(usableCountIndex, 5, format(
+                #                 (yearAnomalyInterventionDict[year][anomaly][intervention]) * 1.0 / logyearInterventionNum[year][
+                #                     intervention], '0.4%'))
+                #             countSheet.write(usableCountIndex, 6, (count2010 - count2009) * 1.0 / (count2009 - count2008))
+                #             usableCountIndex += 1
+                #     isRateUsable = False
+                #     isCountUsable = False
+
+workbook.save('test2.xls')
 # for i in yearInterventionNum.iteritems():
 #     for j in i[1].iteritems():
 #         print i[0], j[0], j[1]
